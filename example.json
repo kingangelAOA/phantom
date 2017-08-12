@@ -1,0 +1,54 @@
+[
+	{
+		"name": "test",
+		"interfaces": [
+			{
+				"name": "test1",
+				"url": "http://127.0.0.1:3000/login",
+				"headers": {
+					"Content-Type": "application/json"
+				},
+				"method": "POST",
+				"body": "{\"username\": \"jun.yansh\", \"password\": \"1357924680\"}",
+				"stores": [
+					{
+						"type": "JSONPATH",
+						"toKey": "status",
+						"jsonPath": "{.status}",
+						"value": "aaaa"
+					},
+					{
+						"type": "COMMON",
+						"toKey": "common",
+						"jsonPath": "{.status}",
+						"value": "2000"
+					}
+				]
+			},
+			{
+				"name": "test1",
+				"url": "http://127.0.0.1:3000/login?status=${status}",
+				"headers": {
+					"Content-Type": "application/json"
+				},
+				"method": "POST",
+				"body": "{\"username\": \"jun.yansh\", \"password\": \"1357924680\"}",
+				"stores": [
+					{
+						"type": "JSONPATH",
+						"toKey": "c_message",
+						"jsonPath": "{.users[0].name}",
+						"value": "aaaa"
+					}
+				]
+			}
+		],
+		"runConfig": {
+			"type": 0,
+			"time": 60,
+			"threadNum": 20,
+			"userNum": 5,
+			"wait": false
+		}
+	}
+]
