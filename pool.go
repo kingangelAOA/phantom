@@ -1,10 +1,5 @@
 package phantom
 
-import (
-	"fmt"
-	"time"
-)
-
 //Pool pool object
 type Pool struct {
 	GoroutineNum         uint16
@@ -16,8 +11,6 @@ type Pool struct {
 	waitForAllJobs       chan bool
 	task                 func() error
 	finished             bool
-	RunNum               uint64
-	RunTime              int64
 }
 
 //Init  init pool
@@ -46,7 +39,7 @@ func (p *Pool) initConcurrentGoroutines() {
 //Start start pool
 func (p *Pool) start() {
 	go func() {
-		for {
+		for !p.finished {
 			<-p.done
 			if !p.finished {
 				p.ConcurrentGoroutines <- struct{}{}
@@ -55,21 +48,16 @@ func (p *Pool) start() {
 	}()
 
 	go func() {
-		beginTime := time.Now().Unix()
-		index := uint64(1)
 		for !p.finished {
 			<-p.ConcurrentGoroutines
 			go func() {
 				if err := p.task(); err != nil {
-					fmt.Println(err)
+					p.Result <- err
 				}
 				if !p.finished {
 					p.done <- true
 				}
-				p.RunNum = index
-				p.RunTime = time.Now().Unix() - beginTime
 			}()
-			index++
 		}
 	}()
 }

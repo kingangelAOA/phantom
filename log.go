@@ -10,6 +10,8 @@ import (
 //MuConsume lock consumes
 var MuConsume sync.Mutex
 
+var MuRun sync.Mutex
+
 //Log performance Log
 type Log struct {
 	Scene      string
@@ -20,44 +22,50 @@ type Log struct {
 //In inteface log
 type In struct {
 	Name     string
-	Consumes []int
+	Consumes []float64
 }
 
 //RealTimeData print real time log
 func (l *Log) RealTimeData(p *Pool) {
 	go func() {
 		for {
-			time.Sleep(5 * time.Second)
+			time.Sleep(1 * time.Second)
 			fmt.Printf("scene: %s; threadNum: %d  *************\n", l.Scene, l.ThreadNum)
 			for _, in := range l.Interfaces {
-				fmt.Printf("name: %s, QPS: %d, average: %d, 95 line: %d, 99 line: %d, highest: %d\n", in.Name, len(in.Consumes)/int(p.RunTime), in.averageData(), in.lineData(0.95), in.lineData(0.99), in.highestConsume())
+				average, runNum, runTime := in.averageData()
+				fmt.Println("run:", runTime, runNum, (float64(runTime) / 1000))
+				if runNum > 0 && runTime > 0 {
+					fmt.Printf("name: %s, QPS: %f, average: %f, 95 line: %f, 99 line: %f, highest: %f, err: %d\n", in.Name, float64(runNum)/(float64(runTime)/1000), average, in.lineData(0.95), in.lineData(0.99), in.highestConsume(), len(p.Result)/int(runNum))
+				}
 			}
 		}
 	}()
 }
 
-func (i *In) lineData(f float32) int {
+func (i *In) lineData(f float32) float64 {
 	MuConsume.Lock()
 	defer MuConsume.Unlock()
-	sort.Ints(i.Consumes)
+	sort.Float64s(i.Consumes)
 	index := int(float32(len(i.Consumes)) * f)
 	return i.Consumes[index]
 }
 
-func (i *In) highestConsume() int {
+func (i *In) highestConsume() float64 {
 	MuConsume.Lock()
 	defer MuConsume.Unlock()
-	sort.Ints(i.Consumes)
+	sort.Float64s(i.Consumes)
 	length := len(i.Consumes)
 	return i.Consumes[length-1]
 }
 
-func (i *In) averageData() int {
+func (i *In) averageData() (float64, int, float64) {
 	MuConsume.Lock()
 	defer MuConsume.Unlock()
-	sum := 0
+	sum := float64(0)
+	num := len(i.Consumes)
 	for _, v := range i.Consumes {
 		sum += v
 	}
-	return sum / len(i.Consumes)
+	// fmt.Println("consumes:", sum, i.Consumes)
+	return sum / float64(num), num, sum
 }

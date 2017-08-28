@@ -2,8 +2,9 @@ package phantom
 
 import "flag"
 
+//InitFlag init flags
 func InitFlag() *string {
-	filePath := flag.String("filePath", "./", "file config path")
+	config := flag.String("config", "./", "file config path")
 	flag.Parse()
-	return filePath
+	return config
 }

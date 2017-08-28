@@ -7,6 +7,9 @@ const (
 
 //StoreTypeJsonPath get value by jsonpath
 const (
-	StoreTypeJSONPath = "JSONPATH"
-	StoreTypeCommon   = "COMMON"
+	StoreTypeJSONPath    = "JSONPATH"
+	StoreTypeCommon      = "COMMON"
+	TestDataAlphabetical = "ALPHABETICAL"
+	TestDataRandom       = "RANDOM"
+	AssertJSON           = "JSONPATH"
 )

@@ -10,10 +10,16 @@
 				},
 				"method": "POST",
 				"body": "{\"username\": \"jun.yansh\", \"password\": \"1357924680\"}",
+				"testData": {
+					"config": "username;password",
+					"separator": ";",
+					"path": "/Users/kingangeltot/Applications/git_work/go_work/src/alpha.com/test_data.txt",
+					"type": "RANDOM"
+				},
 				"stores": [
 					{
 						"type": "JSONPATH",
-						"toKey": "status",
+						"toKey": "username",
 						"jsonPath": "{.status}",
 						"value": "aaaa"
 					},
@@ -23,30 +29,18 @@
 						"jsonPath": "{.status}",
 						"value": "2000"
 					}
-				]
-			},
-			{
-				"name": "test1",
-				"url": "http://127.0.0.1:3000/login?status=${status}",
-				"headers": {
-					"Content-Type": "application/json"
-				},
-				"method": "POST",
-				"body": "{\"username\": \"jun.yansh\", \"password\": \"1357924680\"}",
-				"stores": [
-					{
-						"type": "JSONPATH",
-						"toKey": "c_message",
-						"jsonPath": "{.users[0].name}",
-						"value": "aaaa"
-					}
-				]
+				],
+				"assert": {
+					"type": "JSONPATH",
+					"jsonPath": "{.other}",
+					"expect": "<nil>"
+				}
 			}
 		],
 		"runConfig": {
 			"type": 0,
-			"time": 60,
-			"threadNum": 20,
+			"time": 20,
+			"threadNum": 100,
 			"userNum": 5,
 			"wait": false
 		}

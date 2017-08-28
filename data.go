@@ -15,9 +15,28 @@ type Interface struct {
 	URL       string `validate:"nonzero"`
 	Headers   map[string]string
 	Method    string `validate:"nonzero"`
-	Stores    []Store
 	Body      string `validate:"nonzero"`
-	Consuming int64
+	Consuming float64
+	Stores    []Store
+	TestData  *TestData
+	Assert    Assert
+}
+
+//Assert assert config
+type Assert struct {
+	Type     string
+	JSONPath string
+	Expect   string
+}
+
+//TestData test data
+type TestData struct {
+	Config    string `validate:"nonzero"`
+	Separator string `validate:"nonzero"`
+	Path      string `validate:"nonzero"`
+	Type      string
+	index     int
+	Data      []map[string]string
 }
 
 // Store save some response data to global
@@ -50,8 +69,8 @@ func NewCache() *Cache {
 }
 
 //JSONToScenes json to struct
-func JSONToScenes(b []byte) ([]Scene, error) {
-	var scenes []Scene
+func JSONToScenes(b []byte) ([]*Scene, error) {
+	var scenes []*Scene
 	err := json.Unmarshal(b, &scenes)
 	if err != nil {
 		return nil, err
@@ -71,6 +90,13 @@ func JSONToScenes(b []byte) ([]Scene, error) {
 				if err := ValidateStruct(store); err != nil {
 					return nil, err
 				}
+			}
+		}
+	}
+	for _, scene := range scenes {
+		for _, in := range scene.Interfaces {
+			if in.TestData != nil {
+				in.TestData.initTestData()
 			}
 		}
 	}

@@ -20,7 +20,7 @@ func TestSave(t *testing.T) {
 		for _, in := range scene.Interfaces {
 			cache := NewCache()
 			for _, store := range in.Stores {
-				if err := store.Save(`{"message": "test", "password": "111111", "status": "teststatus"}`, cache); err != nil {
+				if err := store.Save([]byte(`{"message": "test", "password": "111111", "status": "teststatus"}`), cache); err != nil {
 					t.Error(err)
 				}
 			}

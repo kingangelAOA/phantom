@@ -57,7 +57,7 @@ func (i *Interface) Request() (*http.Response, error) {
 	}
 	nowTime := time.Now().UnixNano() / 1e6
 	response, err := client.Do(req)
-	i.Consuming = time.Now().UnixNano()/1e6 - nowTime
+	i.Consuming = float64(time.Now().UnixNano()/1e6 - nowTime)
 	if err != nil {
 		return nil, err
 	}

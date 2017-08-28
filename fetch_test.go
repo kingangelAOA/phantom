@@ -35,7 +35,7 @@ func TestRequest(t *testing.T) {
 					t.Error(err)
 				}
 				for _, store := range in.Stores {
-					err := store.Save(string(body), cache)
+					err := store.Save(body, cache)
 					if err != nil {
 						t.Error(err)
 					}

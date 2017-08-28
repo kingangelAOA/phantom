@@ -2,6 +2,7 @@ package phantom
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"time"
 )
@@ -12,16 +13,16 @@ var log Log
 func (s *Scene) Run() {
 	var p Pool
 	log.Scene = s.Name
-	choiceModel(s, p)
+	s.choiceModel(p)
 }
 
-func choiceModel(s *Scene, p Pool) {
+func (s *Scene) choiceModel(p Pool) {
 	if s.RunConfig.Type == RunTypeTime {
-		controlByTime(s, p)
+		s.controlByTime(p)
 	}
 }
 
-func controlByTime(s *Scene, p Pool) error {
+func (s *Scene) controlByTime(p Pool) error {
 	r := s.RunConfig
 	num := r.ThreadNum
 	runTime := r.Time
@@ -36,15 +37,65 @@ func controlByTime(s *Scene, p Pool) error {
 		log.Interfaces = append(log.Interfaces, v)
 	}
 	p.addTask(func() error {
-		if err := runInterfaces(s, logIns); err != nil {
+		if err := runInterfaces(s.Interfaces, logIns); err != nil {
 			return err
 		}
 		return nil
 	})
 	p.start()
 	log.RealTimeData(&p)
-	<-endFlag
-	p.stop()
+	for {
+		select {
+		case <-endFlag:
+			break
+		case err := <-p.Result:
+			fmt.Println(err)
+		}
+	}
+}
+
+func runInterfaces(ins []Interface, logIns map[string]*In) error {
+	cache := NewCache()
+	for _, in := range ins {
+		logIn, _ := logIns[in.Name]
+		if in.TestData != nil {
+			if err := in.TestData.updateCache(cache); err != nil {
+				return err
+			}
+		}
+		// fmt.Println(cache)
+		if err := in.DataPrepare(cache); err != nil {
+			return err
+		}
+		res, err := in.Request()
+		if err != nil {
+			return err
+		}
+		MuConsume.Lock()
+		logIn.Consumes = append(logIn.Consumes, in.Consuming)
+		MuConsume.Unlock()
+		if res.StatusCode == 200 {
+			body, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				return err
+			}
+			if err := in.Assert.Do(body); err != nil {
+				return err
+			}
+			for _, store := range in.Stores {
+				err := store.Save(body, cache)
+				if err != nil {
+					return err
+				}
+			}
+		} else {
+			body, err := ioutil.ReadAll(res.Body)
+			if err != nil {
+				return err
+			}
+			return fmt.Errorf("request error, status: %d, body: %s", res.StatusCode, string(body))
+		}
+	}
 	return nil
 }
 
@@ -53,40 +104,9 @@ func initLogIn(ins []Interface) map[string]*In {
 	for _, in := range ins {
 		logIn := &In{
 			Name:     in.Name,
-			Consumes: []int{},
+			Consumes: []float64{},
 		}
 		logIns[in.Name] = logIn
 	}
 	return logIns
-}
-
-func runInterfaces(s *Scene, logIns map[string]*In) error {
-	cache := NewCache()
-	for _, in := range s.Interfaces {
-		logIn, _ := logIns[in.Name]
-		err := in.DataPrepare(cache)
-		if err != nil {
-			return err
-		}
-		res, err := in.Request()
-		MuConsume.Lock()
-		logIn.Consumes = append(logIn.Consumes, int(in.Consuming))
-		MuConsume.Unlock()
-		if err != nil {
-			return err
-		}
-		if res.StatusCode == 200 {
-			body, err := ioutil.ReadAll(res.Body)
-			if err != nil {
-				return err
-			}
-			for _, store := range in.Stores {
-				err := store.Save(string(body), cache)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
 }
