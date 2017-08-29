@@ -1,5 +1,7 @@
 package phantom
 
+import "time"
+
 //Pool pool object
 type Pool struct {
 	GoroutineNum         uint16
@@ -11,6 +13,8 @@ type Pool struct {
 	waitForAllJobs       chan bool
 	task                 func() error
 	finished             bool
+	runTime              int64
+	runNum               int64
 }
 
 //Init  init pool
@@ -48,11 +52,19 @@ func (p *Pool) start() {
 	}()
 
 	go func() {
+		nowTime := time.Now().UnixNano() / int64(time.Millisecond)
+		runNum := int64(1)
 		for !p.finished {
 			<-p.ConcurrentGoroutines
 			go func() {
 				if err := p.task(); err != nil {
 					p.Result <- err
+				} else {
+					MuRun.Lock()
+					p.runTime = time.Now().UnixNano()/int64(time.Millisecond) - nowTime
+					p.runNum = runNum
+					MuRun.Unlock()
+					runNum++
 				}
 				if !p.finished {
 					p.done <- true

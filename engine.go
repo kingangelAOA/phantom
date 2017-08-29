@@ -79,8 +79,10 @@ func runInterfaces(ins []Interface, logIns map[string]*In) error {
 			if err != nil {
 				return err
 			}
-			if err := in.Assert.Do(body); err != nil {
-				return err
+			for _, assert := range in.Asserts {
+				if err := assert.Do(body); err != nil {
+					return err
+				}
 			}
 			for _, store := range in.Stores {
 				err := store.Save(body, cache)

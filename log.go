@@ -29,13 +29,16 @@ type In struct {
 func (l *Log) RealTimeData(p *Pool) {
 	go func() {
 		for {
-			time.Sleep(1 * time.Second)
+			time.Sleep(2 * time.Second)
 			fmt.Printf("scene: %s; threadNum: %d  *************\n", l.Scene, l.ThreadNum)
 			for _, in := range l.Interfaces {
-				average, runNum, runTime := in.averageData()
-				fmt.Println("run:", runTime, runNum, (float64(runTime) / 1000))
-				if runNum > 0 && runTime > 0 {
-					fmt.Printf("name: %s, QPS: %f, average: %f, 95 line: %f, 99 line: %f, highest: %f, err: %d\n", in.Name, float64(runNum)/(float64(runTime)/1000), average, in.lineData(0.95), in.lineData(0.99), in.highestConsume(), len(p.Result)/int(runNum))
+				average := in.averageData()
+				min, max := in.minMaxConsume()
+				runNum := p.runNum
+				runTime := p.runTime
+				if runNum > 0 && runTime > 0 && (p.runTime/1000) > 0 {
+					fmt.Printf("name: %s, QPS: %d, average: %f, 95 line: %f, 99 line: %f, min: %f, max: %f, err: %d\n", in.Name, runNum/(p.runTime/1000), average, in.lineData(0.95), in.lineData(0.99), min, max, len(p.Result)/int(runNum))
+					in.Consumes = in.Consumes[:0]
 				}
 			}
 		}
@@ -50,22 +53,21 @@ func (i *In) lineData(f float32) float64 {
 	return i.Consumes[index]
 }
 
-func (i *In) highestConsume() float64 {
+func (i *In) minMaxConsume() (float64, float64) {
 	MuConsume.Lock()
 	defer MuConsume.Unlock()
 	sort.Float64s(i.Consumes)
 	length := len(i.Consumes)
-	return i.Consumes[length-1]
+	return i.Consumes[0], i.Consumes[length-1]
 }
 
-func (i *In) averageData() (float64, int, float64) {
+func (i *In) averageData() float64 {
 	MuConsume.Lock()
 	defer MuConsume.Unlock()
 	sum := float64(0)
-	num := len(i.Consumes)
+	num := int64(len(i.Consumes))
 	for _, v := range i.Consumes {
 		sum += v
 	}
-	// fmt.Println("consumes:", sum, i.Consumes)
-	return sum / float64(num), num, sum
+	return sum / float64(num)
 }

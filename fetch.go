@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"regexp"
 	"strings"
@@ -17,11 +18,11 @@ type Fetch interface {
 
 //DataPrepare interface data prepare
 func (i *Interface) DataPrepare(cache *Cache) error {
-	urlValue, err := parseDataByCache(i.URL, cache)
+	urlValue, err := parseDataByCache(i.Path, cache)
 	if err != nil {
 		return err
 	}
-	i.URL = urlValue
+	i.Path = urlValue
 	bodyValue, err := parseDataByCache(i.Body, cache)
 	if err != nil {
 		return err
@@ -48,16 +49,21 @@ func (i *Interface) Request() (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest(i.Method, i.URL, body)
+	dataLen := len(i.Hosts)
+	s1 := rand.NewSource(time.Now().UnixNano())
+	r1 := rand.New(s1)
+	randNum := r1.Intn(dataLen)
+	host := i.Hosts[randNum]
+	req, err := http.NewRequest(i.Method, host+i.Path, body)
 	if err != nil {
 		return nil, err
 	}
 	for k, v := range i.Headers {
 		req.Header.Set(k, v)
 	}
-	nowTime := time.Now().UnixNano() / 1e6
+	nowTime := time.Now().UnixNano() / int64(time.Millisecond)
 	response, err := client.Do(req)
-	i.Consuming = float64(time.Now().UnixNano()/1e6 - nowTime)
+	i.Consuming = float64(time.Now().UnixNano()/int64(time.Millisecond) - nowTime)
 	if err != nil {
 		return nil, err
 	}

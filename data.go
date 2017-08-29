@@ -12,14 +12,15 @@ type Scene struct {
 //Interface 场景中的接口
 type Interface struct {
 	Name      string `validate:"nonzero"`
-	URL       string `validate:"nonzero"`
+	Hosts     []string
+	Path      string `validate:"nonzero"`
 	Headers   map[string]string
 	Method    string `validate:"nonzero"`
 	Body      string `validate:"nonzero"`
 	Consuming float64
 	Stores    []Store
 	TestData  *TestData
-	Assert    Assert
+	Asserts   []Assert
 }
 
 //Assert assert config
@@ -96,7 +97,9 @@ func JSONToScenes(b []byte) ([]*Scene, error) {
 	for _, scene := range scenes {
 		for _, in := range scene.Interfaces {
 			if in.TestData != nil {
-				in.TestData.initTestData()
+				if err := in.TestData.initTestData(); err != nil {
+					return nil, err
+				}
 			}
 		}
 	}

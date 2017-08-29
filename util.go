@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	JSONPath "k8s.io/client-go/util/jsonpath"
 )
@@ -107,4 +109,12 @@ func formatAtom(v reflect.Value) string {
 	default: // reflect.Array, reflect.Struct, reflect.Interface
 		return v.Type().String() + " value"
 	}
+}
+
+func randomList(list []interface{}) interface{} {
+	dataLen := len(list)
+	s1 := rand.NewSource(time.Now().UnixNano())
+	r1 := rand.New(s1)
+	randNum := r1.Intn(dataLen)
+	return list[randNum]
 }
